@@ -2,16 +2,10 @@ name: Issue Comment Bot
 
 on:
   issues:
-    types:
-      - opened
-      - labeled
+    types: [opened]
 
 permissions:
   issues: write
-
-concurrency:
-  group: issue-comment-${{ github.event.issue.number }}
-  cancel-in-progress: false
 
 jobs:
   comment-on-issue:
@@ -26,36 +20,16 @@ jobs:
               (typeof label === 'string' ? label : label.name).toLowerCase()
             );
 
-            let commentBody = 'Thank you for your contribution!';
+            let body = 'Thank you for your contribution!';
             if (labels.includes('bug')) {
-              commentBody = 'Thank you. We will fix it';
+              body = 'Thank you. We will fix it';
             } else if (labels.includes('feature')) {
-              commentBody = 'Thank you, we will consider to include this feature.';
+              body = 'Thank you, we will consider to include this feature.';
             }
 
-            const knownReplies = new Set([
-              'Thank you. We will fix it',
-              'Thank you, we will consider to include this feature.',
-              'Thank you for your contribution!'
-            ]);
-
-            const { data: comments } = await github.rest.issues.listComments({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.issue.number,
-              per_page: 100
+              issue_number: context.issue.number,
+              body
             });
-
-            const alreadyCommented = comments.some((comment) =>
-              comment.user?.login === 'github-actions[bot]' &&
-              knownReplies.has((comment.body || '').trim())
-            );
-
-            if (!alreadyCommented) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.payload.issue.number,
-                body: commentBody
-              });
-            }
