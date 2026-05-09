@@ -5,6 +5,8 @@ on:
     types:
       - opened
       - edited
+      - labeled
+      - unlabeled
 
 permissions:
   issues: write
@@ -40,9 +42,9 @@ jobs:
               per_page: 100,
             });
 
-            const alreadyExists = comments.some((comment) => {
-              return comment.user?.login === 'github-actions[bot]' && comment.body === body;
-            });
+            const alreadyExists = comments.some((comment) => (
+              comment.user?.login === 'github-actions[bot]' && comment.body === body
+            ));
 
             if (alreadyExists) {
               return;
