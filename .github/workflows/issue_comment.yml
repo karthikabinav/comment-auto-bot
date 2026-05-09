@@ -1,29 +1,44 @@
-name: Issue Commenter
+name: Auto Comment
 on:
   issues:
     types: [opened]
 
-permissions:
-  issues: write
-
 jobs:
-  comment:
+  auto-comment:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
-      - uses: actions/github-script@v6
+      - name: Check bug label
+        if: contains(github.event.issue.labels.*.name, 'bug')
+        uses: actions/github-script@v6
         with:
           script: |
-            const labels = context.payload.issue.labels.map(label => label.name.toLowerCase());
-            let reply = "Thank you for your contribution!";
-            if (labels.includes("bug")) {
-              reply = "Thank you. We will fix it";
-            } else if (labels.includes("feature")) {
-              reply = "Thank you, we will consider to include this feature.";
-            }
-            
-            await github.rest.issues.createComment({
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
+              body: 'Thank you. We will fix it'
+            })
+      - name: Check feature label
+        if: contains(github.event.issue.labels.*.name, 'feature')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
-              body: reply
-            });
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you, we will consider to include this feature.'
+            })
+      - name: Check no label
+        if: toJSON(github.event.issue.labels) == '[]'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you for your contribution!'
+            })
