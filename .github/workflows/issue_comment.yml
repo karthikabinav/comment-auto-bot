@@ -1,0 +1,29 @@
+name: Issue Commenter
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(label => label.name.toLowerCase());
+            let reply = "Thank you for your contribution!";
+            if (labels.includes("bug")) {
+              reply = "Thank you. We will fix it";
+            } else if (labels.includes("feature")) {
+              reply = "Thank you, we will consider to include this feature.";
+            }
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: reply
+            });
