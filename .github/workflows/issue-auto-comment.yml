@@ -17,12 +17,18 @@ jobs:
         with:
           script: |
             const labels = (context.payload.issue.labels || []).map((label) => label.name);
-            let body = 'Thank you for your contribution!';
+            let body = null;
 
             if (labels.includes('bug')) {
               body = 'Thank you. We will fix it';
             } else if (labels.includes('feature')) {
               body = 'Thank you, we will consider to include this feature.';
+            } else if (labels.length === 0) {
+              body = 'Thank you for your contribution!';
+            }
+
+            if (!body) {
+              return;
             }
 
             await github.rest.issues.createComment({
