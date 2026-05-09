@@ -10,6 +10,11 @@ on:
         description: Issue number to process
         required: true
         type: string
+      force_comment:
+        description: Force posting even if the same comment already exists
+        required: false
+        default: 'false'
+        type: string
 
 permissions:
   issues: write
@@ -23,6 +28,7 @@ jobs:
         with:
           script: |
             const inputIssueNumber = context.payload.inputs?.issue_number;
+            const forceComment = String(context.payload.inputs?.force_comment || 'false').toLowerCase() === 'true';
             const issueNumber = inputIssueNumber ? Number(inputIssueNumber) : context.issue.number;
 
             const { data: issue } = await github.rest.issues.get({
@@ -59,7 +65,7 @@ jobs:
               return comment.user?.login === 'github-actions[bot]' && comment.body === body;
             });
 
-            if (alreadyExists) {
+            if (alreadyExists && !forceComment) {
               return;
             }
 
