@@ -1,36 +1,9 @@
-name: Issue Comment Bot
-
+name: Deprecated Issue Comment Workflow
 on:
-  issues:
-    types: [opened, labeled, unlabeled, edited]
-
-permissions:
-  issues: write
+  workflow_dispatch:
 
 jobs:
-  comment:
+  noop:
     runs-on: ubuntu-latest
     steps:
-      - name: Bug Comment
-        if: contains(github.event.issue.labels.*.name, 'bug')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE: ${{ github.event.issue.html_url }}
-        run: |
-          gh issue comment $ISSUE --body "Thank you. We will fix it"
-
-      - name: Feature Comment
-        if: contains(github.event.issue.labels.*.name, 'feature')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE: ${{ github.event.issue.html_url }}
-        run: |
-          gh issue comment $ISSUE --body "Thank you, we will consider to include this feature."
-
-      - name: No Label Comment
-        if: toJSON(github.event.issue.labels) == '[]'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE: ${{ github.event.issue.html_url }}
-        run: |
-          gh issue comment $ISSUE --body "Thank you for your contribution!"
+      - run: echo "This workflow is intentionally disabled."
