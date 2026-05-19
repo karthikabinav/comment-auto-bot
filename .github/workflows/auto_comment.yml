@@ -2,8 +2,7 @@ name: Auto Comment
 
 on:
   issues:
-    types:
-      - opened
+    types: [opened]
 
 jobs:
   auto-comment:
@@ -11,22 +10,23 @@ jobs:
     permissions:
       issues: write
     steps:
-      - name: Comment on issue
+      - name: Comment based on labels
         uses: actions/github-script@v6
         with:
           script: |
-            const labels = context.payload.issue.labels.map(l => l.name);
-            let message = 'Thank you for your contribution!';
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+            let message = "Thank you for your contribution!";
             
-            if (labels.includes('bug')) {
-              message = 'Thank you. We will fix it';
-            } else if (labels.includes('feature')) {
-              message = 'Thank you, we will consider to include this feature.';
+            if (labels.includes("bug")) {
+              message = "Thank you. We will fix it";
+            } else if (labels.includes("feature")) {
+              message = "Thank you, we will consider to include this feature.";
             }
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: issue.number,
               body: message
             });
