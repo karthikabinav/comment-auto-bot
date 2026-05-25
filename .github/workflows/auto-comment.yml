@@ -1,28 +1,33 @@
-name: Auto Comment
+name: Auto Comment on Issues
+
 on:
   issues:
     types: [opened]
 
-permissions:
-  issues: write
-
 jobs:
-  comment:
+  auto-comment:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - uses: actions/github-script@v6
         with:
           script: |
-            const labels = context.payload.issue.labels.map(l => l.name);
-            let body = "Thank you for your contribution!";
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+            let message = "";
             if (labels.includes("bug")) {
-              body = "Thank you. We will fix it";
+              message = "Thank you. We will fix it";
             } else if (labels.includes("feature")) {
-              body = "Thank you, we will consider to include this feature.";
+              message = "Thank you, we will consider to include this feature.";
+            } else if (labels.length === 0) {
+              message = "Thank you for your contribution!";
             }
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: body
-            });
+            if (message) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: message
+              });
+            }
