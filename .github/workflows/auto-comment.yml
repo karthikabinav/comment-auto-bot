@@ -1,48 +1,26 @@
 name: Auto Comment Bot
-
 on:
   issues:
-    types: [opened, labeled]
-
+    types: [opened]
 jobs:
   comment:
     runs-on: ubuntu-latest
     permissions:
       issues: write
     steps:
-      - name: Comment on bug issues
-        if: contains(github.event.issue.labels.*.name, 'bug')
-        uses: actions/github-script@v7
+      - uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            let body = "Thank you for your contribution!";
+            if (labels.includes("bug")) {
+              body = "Thank you. We will fix it";
+            } else if (labels.includes("feature")) {
+              body = "Thank you, we will consider to include this feature.";
+            }
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: 'Thank you. We will fix it'
-            })
-      - name: Comment on feature issues
-        if: contains(github.event.issue.labels.*.name, 'feature')
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: 'Thank you, we will consider to include this feature.'
-            })
-      - name: Comment on unlabeled issues
-        if: github.event.action == 'opened' && github.event.issue.labels.length == 0
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: 'Thank you for your contribution!'
-            })
+              body: body
+            });
