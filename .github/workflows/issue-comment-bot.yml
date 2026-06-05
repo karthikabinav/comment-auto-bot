@@ -2,7 +2,7 @@ name: Issue Comment Bot
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
 jobs:
   comment:
@@ -19,7 +19,6 @@ jobs:
               repo: context.repo.repo,
               body: 'Thank you. We will fix it'
             })
-
       - name: Comment on feature issues
         if: contains(github.event.issue.labels.*.name, 'feature')
         uses: actions/github-script@v6
@@ -31,8 +30,7 @@ jobs:
               repo: context.repo.repo,
               body: 'Thank you, we will consider to include this feature.'
             })
-
-      - name: Comment on unlabeled issues
+      - name: Comment on issues with no labels
         if: github.event.issue.labels[0] == null
         uses: actions/github-script@v6
         with:
