@@ -1,0 +1,34 @@
+name: Auto Comment
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            let body = '';
+            if (labels.includes('bug')) {
+              body = 'Thank you. We will fix it';
+            } else if (labels.includes('feature')) {
+              body = 'Thank you, we will consider to include this feature.';
+            } else if (labels.length === 0) {
+              body = 'Thank you for your contribution!';
+            }
+            if (body !== '') {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
