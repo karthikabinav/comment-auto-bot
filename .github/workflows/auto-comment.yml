@@ -1,4 +1,4 @@
-name: Auto Comment on Issues
+name: Auto Comment Bot
 
 on:
   issues:
@@ -10,26 +10,38 @@ jobs:
     permissions:
       issues: write
     steps:
-      - name: Check issue labels and comment
+      - name: Comment on bug issues
+        if: contains(github.event.issue.labels.*.name, 'bug')
         uses: actions/github-script@v7
         with:
           script: |
-            const issue = context.issue;
-            const labels = context.payload.issue.labels.map(label => label.name);
-            
-            let commentBody = "";
-            
-            if (labels.includes("bug")) {
-              commentBody = "Thank you. We will fix it";
-            } else if (labels.includes("feature")) {
-              commentBody = "Thank you, we will consider to include this feature.";
-            } else {
-              commentBody = "Thank you for your contribution!";
-            }
-            
-            await github.rest.issues.createComment({
-              issue_number: issue.number,
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: commentBody
-            });
+              body: 'Thank you. We will fix it'
+            })
+
+      - name: Comment on feature issues
+        if: contains(github.event.issue.labels.*.name, 'feature')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you, we will consider to include this feature.'
+            })
+
+      - name: Comment on other issues
+        if: ${{ !contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'feature') }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you for your contribution!'
+            })
