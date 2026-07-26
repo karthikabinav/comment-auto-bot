@@ -10,7 +10,7 @@ jobs:
     permissions:
       issues: write
     steps:
-      - name: Comment on new issue based on labels
+      - name: Comment based on labels
         uses: actions/github-script@v7
         with:
           script: |
