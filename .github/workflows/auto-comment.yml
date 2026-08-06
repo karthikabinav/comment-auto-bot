@@ -17,9 +17,9 @@ jobs:
             const issue = context.payload.issue;
             const labels = issue.labels.map(l => l.name);
             let comment = "Thank you for your contribution!";
-            if (labels.includes(bug)) {
+            if (labels.includes('bug')) {
               comment = "Thank you. We will fix it";
-            } else if (labels.includes(feature)) {
+            } else if (labels.includes('feature')) {
               comment = "Thank you, we will consider to include this feature.";
             }
             await github.rest.issues.createComment({
