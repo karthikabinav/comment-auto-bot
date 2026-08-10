@@ -2,7 +2,7 @@ name: Automated Comment Bot
 
 on:
   issues:
-    types: [opened, reopened, labeled]
+    types: [opened]
 
 jobs:
   comment:
@@ -15,11 +15,11 @@ jobs:
         with:
           script: |
             const labels = context.payload.issue.labels.map(l => l.name);
-            let comment = 'Thank you for your contribution!'
-            if (labels.includes('bug')) {
-              comment = 'Thank you. We will fix it'
-            } else if (labels.includes('feature')) {
-              comment = 'Thank you, we will consider to include this feature.'
+            let comment = "Thank you for your contribution!"
+            if (labels.includes("bug")) {
+              comment = "Thank you. We will fix it"
+            } else if (labels.includes("feature")) {
+              comment = "Thank you, we will consider to include this feature."
             }
             github.rest.issues.createComment({
               issue_number: context.issue.number,
