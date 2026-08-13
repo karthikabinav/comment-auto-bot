@@ -1,12 +1,16 @@
-name: Comment Auto Bot
+name: Comment Bot
+
 on:
   issues:
     types: [opened]
+
 jobs:
   comment:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
-      - name: Add comment based on label
+      - name: Add label-based comment
         uses: actions/github-script@v7
         with:
           script: |
@@ -17,7 +21,7 @@ jobs:
             } else if (labels.includes("feature")) {
               comment = "Thank you, we will consider to include this feature.";
             }
-            await github.rest.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
