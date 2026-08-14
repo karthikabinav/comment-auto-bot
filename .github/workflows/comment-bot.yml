@@ -1,9 +1,11 @@
-name: Comment Bot
+name: Auto Comment Bot
+
 on:
   issues:
     types: [opened]
+
 jobs:
-  comment:
+  add-comment:
     runs-on: ubuntu-latest
     steps:
       - name: Comment based on label
@@ -12,11 +14,13 @@ jobs:
           script: |
             const labels = context.payload.issue.labels.map(l => l.name);
             let body = "Thank you for your contribution!";
-            if (labels.includes('bug')) { body = "Thank you. We will fix it"; }
-            else if (labels.includes('feature')) { body = "Thank you, we will consider to include this feature."; }
+            if (labels.includes("bug")) {
+              body = "Thank you. We will fix it";
+            } else if (labels.includes("feature")) {
+              body = "Thank you, we will consider to include this feature.";
+            }
             await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
+              ...context.repo,
+              issue_number: context.payload.issue.number,
               body: body
-            })
+            });
