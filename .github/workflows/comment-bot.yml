@@ -1,29 +1,39 @@
 name: Automated Comment Bot
-
 on:
   issues:
     types: [opened]
-
+permissions:
+  issues: write
 jobs:
   add-comment:
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
     steps:
-      - name: Add comment based on labels
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const labels = context.payload.issue.labels.map(l => l.name);
-            let body = "Thank you for your contribution!";
-            if (labels.includes("bug")) {
-              body = "Thank you. We will fix it";
-            } else if (labels.includes("feature")) {
-              body = "Thank you, we will consider to include this feature.";
-            }
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: body
-            });
+      - name: Determine comment message
+        id: selector
+        env:
+          LABELS_JSON: ${{ toJson(github.event.issue.labels) }}
+        run: |
+          python3 << "PY"
+          import json, os
+          labels = json.loads(os.getenv("LABELS_JSON", "[]"))
+          names = [l.get("name", "").lower() for l in labels]
+          if "bug" in names:
+              msg = "Thank you. We will fix it"
+          elif "feature" in names:
+              msg = "Thank you, we will consider to include this feature."
+          elif len(names) == 0:
+              msg = "Thank you for your contribution!"
+          else:
+              msg = "Thank you for your contribution!"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"message={msg}\n")
+          print(msg)
+          PY
+      - name: Post comment
+        run: |
+          curl -sSL -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
+            -d "{\"body\": \"${{ steps.selector.outputs.message }}\"}"
