@@ -1,27 +1,28 @@
-name: Super Cool Automated Comment Bot
+name: Super Cool Project Bot
+
 on:
   issues:
     types: [opened]
+
 jobs:
   auto-comment:
     runs-on: ubuntu-latest
     permissions:
       issues: write
     steps:
-      - name: Comment based on issue label
-        uses: actions/github-script@v7
+      - uses: actions/github-script@v7
         with:
           script: |
             const labels = context.payload.issue.labels.map(l => l.name);
-            let message = "Thank you for your contribution!";
+            let body = "Thank you for your contribution!";
             if (labels.includes("bug")) {
-              message = "Thank you. We will fix it";
+              body = "Thank you. We will fix it";
             } else if (labels.includes("feature")) {
-              message = "Thank you, we will consider to include this feature.";
+              body = "Thank you, we will consider to include this feature.";
             }
-            await github.rest.issues.createComment({
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: message
+              body: body
             });
