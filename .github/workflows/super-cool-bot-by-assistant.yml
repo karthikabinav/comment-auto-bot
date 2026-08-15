@@ -1,0 +1,22 @@
+name: Automated Comment Bot
+on:
+  issues:
+    types: [opened]
+permissions:
+  issues: write
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment bug
+        if: contains(github.event.issue.labels.*.name, 'bug')
+        run: |
+          curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments -d '{"body":"Thank you. We will fix it"}'
+      - name: Comment feature
+        if: contains(github.event.issue.labels.*.name, 'feature')
+        run: |
+          curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments -d '{"body":"Thank you, we will consider to include this feature."}'
+      - name: Comment no label
+        if: github.event.issue.labels[0] == null
+        run: |
+          curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments -d '{"body":"Thank you for your contribution!"}'
