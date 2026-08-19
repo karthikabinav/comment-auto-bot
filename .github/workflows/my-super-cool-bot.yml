@@ -1,9 +1,9 @@
-name: Automated Comment Bot
+name: Super Cool Comment Bot
 on:
   issues:
     types: [opened]
 jobs:
-  comment:
+  auto-comment:
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -13,15 +13,15 @@ jobs:
         with:
           script: |
             const labels = context.payload.issue.labels.map(l => l.name);
-            let message = "Thank you for your contribution!";
+            let comment = "Thank you for your contribution!";
             if (labels.includes("bug")) {
-              message = "Thank you. We will fix it";
+              comment = "Thank you. We will fix it";
             } else if (labels.includes("feature")) {
-              message = "Thank you, we will consider to include this feature.";
+              comment = "Thank you, we will consider to include this feature.";
             }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: message
+              body: comment
             });
