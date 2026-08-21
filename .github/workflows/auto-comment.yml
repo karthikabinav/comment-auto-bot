@@ -12,19 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Comment on bug issues
-        if: contains(github.event.issue.labels.*.name, 'bug')
+        if: contains(github.event.issue.labels.*.name, bug)
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
           body: Thank you. We will fix it
       - name: Comment on feature issues
-        if: contains(github.event.issue.labels.*.name, 'feature')
+        if: contains(github.event.issue.labels.*.name, feature)
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
           body: Thank you, we will consider to include this feature.
       - name: Comment on other issues
-        if: ${{ !contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'feature') }}
+        if: ${{ !contains(github.event.issue.labels.*.name, bug) && !contains(github.event.issue.labels.*.name, feature) }}
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
