@@ -1,12 +1,12 @@
-name: Comment Auto Bot
+name: Auto Comment Bot
 on:
   issues:
-    types: [opened]
-permissions:
-  issues: write
+    types: [opened, labeled]
 jobs:
   comment:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - name: Comment based on label
         uses: actions/github-script@v7
@@ -22,6 +22,6 @@ jobs:
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: context.payload.issue.number,
               body: body
             });
