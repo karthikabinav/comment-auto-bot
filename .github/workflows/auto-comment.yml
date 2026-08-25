@@ -1,4 +1,4 @@
-name: Auto Comment on Issues
+name: Auto Comment Bot
 
 on:
   issues:
@@ -8,24 +8,39 @@ permissions:
   issues: write
 
 jobs:
-  auto-comment:
+  comment:
     runs-on: ubuntu-latest
     steps:
-      - name: Comment on bug issues
+      - name: Comment for bug label
         if: contains(github.event.issue.labels.*.name, 'bug')
-        uses: peter-evans/create-or-update-comment@v4
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: Thank you. We will fix it
-      - name: Comment on feature issues
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Thank you. We will fix it"
+            })
+      - name: Comment for feature label
         if: contains(github.event.issue.labels.*.name, 'feature')
-        uses: peter-evans/create-or-update-comment@v4
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: Thank you, we will consider to include this feature.
-      - name: Comment on other issues
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Thank you, we will consider to include this feature."
+            })
+      - name: Comment for no label or other labels
         if: ${{ !contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'feature') }}
-        uses: peter-evans/create-or-update-comment@v4
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: Thank you for your contribution!
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Thank you for your contribution!"
+            })
