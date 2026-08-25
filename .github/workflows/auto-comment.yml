@@ -1,4 +1,4 @@
-name: Auto Comment Bot
+name: Comment Auto Bot
 
 on:
   issues:
@@ -10,19 +10,20 @@ jobs:
     permissions:
       issues: write
     steps:
-      - uses: actions/github-script@v7
+      - name: Add comment based on label
+        uses: actions/github-script@v7
         with:
           script: |
-            const labels = context.payload.issue.labels.map(l => l.name);
-            let body = "Thank you for your contribution!";
-            if (labels.includes("bug")) {
-              body = "Thank you. We will fix it";
-            } else if (labels.includes("feature")) {
-              body = "Thank you, we will consider to include this feature.";
+            const labels = context.payload.issue.labels.map(label => label.name);
+            let comment = "Thank you for your contribution!";
+            if (labels.includes('bug')) {
+              comment = "Thank you. We will fix it";
+            } else if (labels.includes('feature')) {
+              comment = "Thank you, we will consider to include this feature.";
             }
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: body
+              body: comment
             });
