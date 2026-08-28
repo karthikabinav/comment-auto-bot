@@ -21,7 +21,7 @@ jobs:
             } else if (labels.includes('feature')) {
               comment = "Thank you, we will consider to include this feature.";
             }
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
