@@ -1,0 +1,36 @@
+name: Automated Comment Bot
+
+# Watches for newly opened issues and posts a reply that depends on the issue label:
+#   - "bug"     -> "Thank you. We will fix it"
+#   - "feature" -> "Thank you, we will consider to include this feature."
+#   - no label  -> "Thank you for your contribution!"
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  auto-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post a label-aware welcome comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = (context.payload.issue.labels || []).map(label => label.name);
+            let body = "Thank you for your contribution!";
+            if (labels.includes("bug")) {
+              body = "Thank you. We will fix it";
+            } else if (labels.includes("feature")) {
+              body = "Thank you, we will consider to include this feature.";
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: body
+            });
