@@ -1,12 +1,9 @@
 name: Automated Comment Bot
-
 on:
   issues:
     types: [opened]
-
 permissions:
   issues: write
-
 jobs:
   auto-comment:
     runs-on: ubuntu-latest
