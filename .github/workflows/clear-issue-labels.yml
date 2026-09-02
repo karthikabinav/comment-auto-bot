@@ -1,0 +1,24 @@
+name: Clear Issue Labels (maintenance)
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number whose labels should be removed
+        required: true
+permissions:
+  issues: write
+jobs:
+  clear-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove all labels from the given issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = Number(context.payload.inputs.issue_number);
+            await github.rest.issues.removeAllLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number
+            });
+            core.info(`Removed all labels from #${issue_number}`);
