@@ -1,4 +1,4 @@
-name: Automated Comment Bot
+name: Comment Auto Bot
 on:
   issues:
     types: [opened]
