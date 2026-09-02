@@ -17,16 +17,16 @@ jobs:
         with:
           script: |
             const labels = context.payload.issue.labels.map((label) =>
-              typeof label === string ? label : label.name
+              typeof label === "string" ? label : label.name
             );
 
             let body;
-            if (labels.includes(bug)) {
-              body = Thank you. We will fix it;
-            } else if (labels.includes(feature)) {
-              body = Thank you, we will consider to include this feature.;
+            if (labels.includes("bug")) {
+              body = "Thank you. We will fix it";
+            } else if (labels.includes("feature")) {
+              body = "Thank you, we will consider to include this feature.";
             } else if (labels.length === 0) {
-              body = Thank you for your contribution!;
+              body = "Thank you for your contribution!";
             }
 
             if (body) {
