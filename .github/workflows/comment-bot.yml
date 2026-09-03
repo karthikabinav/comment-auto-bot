@@ -1,26 +1,45 @@
-name: Automated Comment Bot
+name: Comment Auto Bot
+
 on:
   issues:
     types: [opened]
-permissions:
-  issues: write
+
 jobs:
-  auto-comment:
+  comment:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
-      - uses: actions/github-script@v7
+      - name: Comment on bug issues
+        if: contains(github.event.issue.labels.*.name, 'bug')
+        uses: actions/github-script@v7
         with:
           script: |
-            const labels = context.payload.issue.labels.map(l => l.name);
-            let body = "Thank you for your contribution!";
-            if (labels.includes("bug")) {
-              body = "Thank you. We will fix it";
-            } else if (labels.includes("feature")) {
-              body = "Thank you, we will consider to include this feature.";
-            }
-            await github.rest.issues.createComment({
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
+              body: 'Thank you. We will fix it'
+            })
+      - name: Comment on feature issues
+        if: contains(github.event.issue.labels.*.name, 'feature')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
-              body: body
-            });
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you, we will consider to include this feature.'
+            })
+      - name: Comment on unlabeled issues
+        if: github.event.issue.labels == null || length(github.event.issue.labels) == 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you for your contribution!'
+            })
