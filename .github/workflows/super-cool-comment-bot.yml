@@ -1,4 +1,4 @@
-name: Automated Comment Bot
+name: Super Cool Comment Auto Bot
 
 on:
   issues:
@@ -11,7 +11,7 @@ jobs:
   auto-comment:
     runs-on: ubuntu-latest
     steps:
-      - name: Auto comment based on labels
+      - name: Comment based on labels
         uses: actions/github-script@v7
         with:
           script: |
