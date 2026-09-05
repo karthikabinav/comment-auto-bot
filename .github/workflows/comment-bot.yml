@@ -2,7 +2,7 @@ name: Automated Comment Bot
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
 permissions:
   issues: write
@@ -33,8 +33,8 @@ jobs:
               repo: context.repo.repo,
               body: Thank you, we will consider to include this feature.
             })
-      - name: Comment on unlabeled issues
-        if: ${{ github.event.action == opened && github.event.issue.labels.length == 0 }}
+      - name: Comment on issues with no label
+        if: join(github.event.issue.labels.*.name) == 
         uses: actions/github-script@v7
         with:
           script: |
