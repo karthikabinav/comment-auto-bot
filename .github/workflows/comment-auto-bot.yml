@@ -34,7 +34,7 @@ jobs:
               body: 'Thank you, we will consider to include this feature.'
             })
       - name: Comment on unlabeled issues
-        if: github.event.issue.labels.length == 0
+        if: ${{ github.event.issue.labels.length == 0 }}
         uses: actions/github-script@v7
         with:
           script: |
