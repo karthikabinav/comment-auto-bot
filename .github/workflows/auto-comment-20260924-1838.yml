@@ -1,0 +1,33 @@
+name: Automated Comment Bot
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  auto-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment for bug issues
+        if: contains(github.event.issue.labels.*.name, 'bug')
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: Thank you. We will fix it
+
+      - name: Comment for feature issues
+        if: contains(github.event.issue.labels.*.name, 'feature')
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: Thank you, we will consider to include this feature.
+
+      - name: Comment for issues without label
+        if: toJSON(github.event.issue.labels) == '[]'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: Thank you for your contribution!
