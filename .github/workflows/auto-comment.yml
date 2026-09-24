@@ -26,7 +26,7 @@ jobs:
           body: Thank you, we will consider to include this feature.
 
       - name: Comment for issues without label
-        if: github.event.issue.labels[0] == null
+        if: toJSON(github.event.issue.labels) == '[]'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
