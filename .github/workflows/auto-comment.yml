@@ -1,4 +1,4 @@
-name: Auto Comment
+name: Comment Auto Bot
 
 on:
   issues:
@@ -8,26 +8,22 @@ permissions:
   issues: write
 
 jobs:
-  auto-comment:
+  comment:
     runs-on: ubuntu-latest
     steps:
-      - name: Comment for bug issues
-        if: contains(github.event.issue.labels.*.name, 'bug')
-        uses: peter-evans/create-or-update-comment@v4
+      - uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: Thank you. We will fix it
-
-      - name: Comment for feature issues
-        if: contains(github.event.issue.labels.*.name, 'feature')
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ github.event.issue.number }}
-          body: Thank you, we will consider to include this feature.
-
-      - name: Comment for issues without label
-        if: toJSON(github.event.issue.labels) == '[]'
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ github.event.issue.number }}
-          body: Thank you for your contribution!
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            let body = "Thank you for your contribution!";
+            if (labels.includes("bug")) {
+              body = "Thank you. We will fix it";
+            } else if (labels.includes("feature")) {
+              body = "Thank you, we will consider to include this feature.";
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
