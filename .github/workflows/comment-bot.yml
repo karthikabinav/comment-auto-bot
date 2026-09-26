@@ -1,4 +1,5 @@
-name: Auto Comment Bot
+name: Issue Comment Bot
+
 on:
   issues:
     types: [opened]
@@ -6,37 +7,41 @@ on:
 jobs:
   comment:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - name: Comment on bug issues
-        if: contains(github.event.issue.labels.*.name, bug)
-        uses: actions/github-script@v6
+        if: contains(github.event.issue.labels.*.name, 'bug')
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: Thank you. We will fix it
+              issue_number: context.issue.number,
+              body: 'Thank you. We will fix it'
             })
+
       - name: Comment on feature issues
-        if: contains(github.event.issue.labels.*.name, feature)
-        uses: actions/github-script@v6
+        if: contains(github.event.issue.labels.*.name, 'feature')
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: Thank you, we will consider to include this feature.
+              issue_number: context.issue.number,
+              body: 'Thank you, we will consider to include this feature.'
             })
-      - name: Comment on unlabeled issues
-        if: ${{ !contains(github.event.issue.labels.*.name, bug) && !contains(github.event.issue.labels.*.name, feature) }}
-        uses: actions/github-script@v6
+
+      - name: Comment on issues without labels
+        if: github.event.issue.labels[0] == null
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: Thank you for your contribution!
+              issue_number: context.issue.number,
+              body: 'Thank you for your contribution!'
             })
