@@ -1,0 +1,46 @@
+name: Automated Comment Bot
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on Bug Issues
+        if: contains(toJSON(github.event.issue.labels.*.name), (char)39bug(char)39)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: (char)39Thank you. We will fix it(char)39
+            })
+      - name: Comment on Feature Issues
+        if: contains(toJSON(github.event.issue.labels.*.name), (char)39feature(char)39)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: (char)39Thank you, we will consider to include this feature.(char)39
+            })
+      - name: Comment on Issues With No Label
+        if: github.event.issue.labels.length == 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: (char)39Thank you for your contribution!(char)39
+            })
