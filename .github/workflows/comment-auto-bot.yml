@@ -11,7 +11,7 @@ jobs:
   auto-comment:
     runs-on: ubuntu-latest
     steps:
-      - name: Auto comment based on labels
+      - name: Add comment based on label
         uses: actions/github-script@v7
         with:
           script: |
