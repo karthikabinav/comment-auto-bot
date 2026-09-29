@@ -1,31 +1,46 @@
 name: Automated Comment Bot
+
 on:
   issues:
     types: [opened]
+
 permissions:
   issues: write
+
 jobs:
   comment:
     runs-on: ubuntu-latest
     steps:
-      - name: Comment on bug issues
-        if: contains(github.event.issue.labels.*.name, 'bug')
-        uses: peter-evans/create-or-update-comment@v4
+      - name: Comment on Bug Issues
+        if: contains(toJSON(github.event.issue.labels.*.name), 'bug')
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: |-
-            Thank you. We will fix it
-      - name: Comment on feature issues
-        if: contains(github.event.issue.labels.*.name, 'feature')
-        uses: peter-evans/create-or-update-comment@v4
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you. We will fix it'
+            })
+      - name: Comment on Feature Issues
+        if: contains(toJSON(github.event.issue.labels.*.name), 'feature')
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: |-
-            Thank you, we will consider to include this feature.
-      - name: Comment on other issues
-        if: ${{ !contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'feature') }}
-        uses: peter-evans/create-or-update-comment@v4
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you, we will consider to include this feature.'
+            })
+      - name: Comment on Other Issues
+        if: ${{ !contains(toJSON(github.event.issue.labels.*.name), 'bug') && !contains(toJSON(github.event.issue.labels.*.name), 'feature') }}
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: |-
-            Thank you for your contribution!
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you for your contribution!'
+            })
