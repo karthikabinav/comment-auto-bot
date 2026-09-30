@@ -1,0 +1,72 @@
+name: Automated Comment Bot
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to test
+        required: true
+        type: number
+      category:
+        description: Issue category to test
+        required: true
+        type: choice
+        options:
+          - bug
+          - feature
+          - unlabeled
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment based on issue labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            let issueNumber;
+            let labels;
+
+            if (context.eventName === 'workflow_dispatch') {
+              issueNumber = Number(context.payload.inputs.issue_number);
+              const category = context.payload.inputs.category;
+              labels = category === 'unlabeled' ? [] : [category];
+
+              // Keep manually dispatched test issues in the requested state.
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                labels,
+                body: ''
+              });
+            } else {
+              issueNumber = context.issue.number;
+              labels = (context.payload.issue.labels || []).map(label => label.name);
+            }
+
+            let body;
+            if (labels.includes('bug')) {
+              body = 'Thank you. We will fix it';
+            } else if (labels.includes('feature')) {
+              body = 'Thank you, we will consider to include this feature.';
+            } else if (labels.length === 0) {
+              body = 'Thank you for your contribution!';
+            } else {
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body
+            });
