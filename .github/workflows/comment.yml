@@ -3,9 +3,16 @@ name: Issue Comment Bot
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number'
+        required: true
+        type: string
 
 jobs:
   comment:
+    if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -26,4 +33,21 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: message
+            });
+
+  clear-labels:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Clear labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.setLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ inputs.issue_number }}'),
+              labels: []
             });
