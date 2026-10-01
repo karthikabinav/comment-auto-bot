@@ -21,12 +21,14 @@ jobs:
               body = "Thank you. We will fix it";
             } else if (labels.includes("feature")) {
               body = "Thank you, we will consider to include this feature.";
+            } else if (labels.length === 0) {
+              body = "Thank you for your contribution!";
             } else {
               body = "Thank you for your contribution!";
             }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: context.payload.issue.number,
               body
             });
