@@ -21,8 +21,6 @@ jobs:
               body = "Thank you. We will fix it";
             } else if (labels.includes("feature")) {
               body = "Thank you, we will consider to include this feature.";
-            } else if (labels.length === 0) {
-              body = "Thank you for your contribution!";
             } else {
               body = "Thank you for your contribution!";
             }
