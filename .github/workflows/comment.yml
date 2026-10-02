@@ -1,53 +1,28 @@
 name: Issue Comment Bot
-
 on:
   issues:
-    types: [opened]
-  workflow_dispatch:
-    inputs:
-      issue_number:
-        description: 'Issue number'
-        required: true
-        type: string
-
+    types:
+      - opened
 jobs:
   comment:
-    if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     permissions:
       issues: write
     steps:
-      - name: Comment on issue
+      - name: Comment
         uses: actions/github-script@v6
         with:
           script: |
             const labels = context.payload.issue.labels.map(l => l.name);
-            let message = "Thank you for your contribution!";
+            let msg = "Thank you for your contribution!";
             if (labels.includes("bug")) {
-              message = "Thank you. We will fix it";
+              msg = "Thank you. We will fix it";
             } else if (labels.includes("feature")) {
-              message = "Thank you, we will consider to include this feature.";
+              msg = "Thank you, we will consider to include this feature.";
             }
             await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: message
-            });
-
-  clear-labels:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    steps:
-      - name: Clear labels
-        uses: actions/github-script@v6
-        with:
-          script: |
-            await github.rest.issues.setLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: Number('${{ inputs.issue_number }}'),
-              labels: []
+              body: msg
             });
