@@ -34,7 +34,7 @@ jobs:
               body: "Thank you, we will consider to include this feature."
             });
       - name: Comment on issue with no label
-        if: ${{ toJSON(github.event.issue.labels) == '[]' }}
+        if: toJSON(github.event.issue.labels) == '[]'
         uses: actions/github-script@v7
         with:
           script: |
