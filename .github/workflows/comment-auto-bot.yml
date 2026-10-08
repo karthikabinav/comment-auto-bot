@@ -24,7 +24,7 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           body: "Thank you, we will consider to include this feature."
       - name: Comment on issues with no label
-        if: ${{ !contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'feature') }}
+        if: ${{ length(github.event.issue.labels) == 0 }}
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
