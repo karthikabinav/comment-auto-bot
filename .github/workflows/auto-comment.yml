@@ -8,7 +8,7 @@ permissions:
   issues: write
 
 jobs:
-  comment:
+  auto-comment:
     runs-on: ubuntu-latest
     steps:
       - name: Comment on bug issue
