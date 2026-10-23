@@ -1,0 +1,35 @@
+name: Prepare Unlabeled Test Issue
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Documentation update test issue to clear labels from
+        required: true
+        type: string
+
+permissions:
+  issues: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Clear labels on the documentation test fixture
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = Number(context.payload.inputs.issue_number);
+            if (!Number.isSafeInteger(issueNumber) || issueNumber <= 0) {
+              throw new Error("A valid positive issue number is required.");
+            }
+            const params = { ...context.repo, issue_number: issueNumber };
+            const { data: issue } = await github.rest.issues.get(params);
+            if (issue.pull_request || issue.title !== "Documentation update" ||
+                issue.body !== "Pretend documentation update to test the automated reply for an issue with no labels." ||
+                issue.user.login !== context.repo.owner) {
+              throw new Error("Refusing to modify anything other than the requested documentation test issue.");
+            }
+            await github.rest.issues.removeAllLabels(params);
