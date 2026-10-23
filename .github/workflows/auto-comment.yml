@@ -20,7 +20,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: "Thank you. We will fix it"
+              body: 'Thank you. We will fix it'
             })
       - name: Comment on feature issues
         if: contains(github.event.issue.labels.*.name, 'feature')
@@ -31,7 +31,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: "Thank you, we will consider to include this feature."
+              body: 'Thank you, we will consider to include this feature.'
             })
       - name: Comment on issues without labels
         if: ${{ !contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'feature') }}
@@ -42,5 +42,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: "Thank you for your contribution!"
+              body: 'Thank you for your contribution!'
             })
