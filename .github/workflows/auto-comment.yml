@@ -33,6 +33,9 @@ jobs:
             }
             const issue = { ...context.repo, issue_number: issueNumber };
             const issueData = context.payload.issue ?? (await github.rest.issues.get(issue)).data;
+            if (issueData.pull_request) {
+              throw new Error("Only issues, not pull requests, are supported.");
+            }
             const labels = issueData.labels.map(label => typeof label === "string" ? label : label.name);
             let body;
             if (labels.includes("bug")) {
@@ -44,7 +47,6 @@ jobs:
             } else {
               return;
             }
-
             const comments = await github.paginate(github.rest.issues.listComments, {
               ...issue,
               per_page: 100
