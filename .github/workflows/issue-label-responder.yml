@@ -1,0 +1,75 @@
+name: Issue Label Responder Bot
+
+# Watches for newly opened issues and replies based on the issue's label:
+#   bug      -> "Thank you. We will fix it"
+#   feature  -> "Thank you, we will consider to include this feature."
+#   no label -> "Thank you for your contribution!"
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  respond:
+    name: Comment on new issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Post label-based comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.issue.number;
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+            // Retry helper: back off when GitHub rate limits us or has a transient error.
+            async function withRetry(what, fn, attempts = 8) {
+              for (let attempt = 1; ; attempt++) {
+                try {
+                  return await fn();
+                } catch (error) {
+                  const status = error.status || 0;
+                  const message = String(error.message || '');
+                  const retryable = status === 429 || status >= 500 ||
+                    (status === 403 && /rate limit/i.test(message));
+                  if (!retryable || attempt >= attempts) throw error;
+                  const retryAfter = Number(error.response?.headers?.['retry-after']) || 0;
+                  const waitSeconds = Math.max(retryAfter, Math.min(60 * attempt, 180));
+                  core.warning(`${what} failed (HTTP ${status}): ${message}. Retrying in ${waitSeconds}s (attempt ${attempt}/${attempts}).`);
+                  await sleep(waitSeconds * 1000);
+                }
+              }
+            }
+
+            const labelNames = (labels) =>
+              (labels || []).map((label) => (typeof label === 'string' ? label : label.name).toLowerCase());
+
+            // Labels applied when the issue was opened are part of the event payload.
+            let labels = labelNames(context.payload.issue.labels);
+            if (labels.length === 0) {
+              // Double-check in case labels were attached right after the issue was created.
+              try {
+                const { data: issue } = await withRetry('Reading issue', () =>
+                  github.rest.issues.get({ owner, repo, issue_number }), 3);
+                labels = labelNames(issue.labels);
+              } catch (error) {
+                core.warning(`Could not re-read labels for #${issue_number}: ${error.message}`);
+              }
+            }
+
+            let body;
+            if (labels.includes('bug')) {
+              body = 'Thank you. We will fix it';
+            } else if (labels.includes('feature')) {
+              body = 'Thank you, we will consider to include this feature.';
+            } else {
+              body = 'Thank you for your contribution!';
+            }
+
+            await withRetry('Posting comment', () =>
+              github.rest.issues.createComment({ owner, repo, issue_number, body }));
+            core.info(`Commented on #${issue_number} (labels: ${labels.join(', ') || 'none'}): ${body}`);
