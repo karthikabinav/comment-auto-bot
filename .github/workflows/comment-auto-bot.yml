@@ -8,10 +8,10 @@ permissions:
   issues: write
 
 jobs:
-  comment:
+  comment-on-new-issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Add comment based on label
+      - name: Comment on new issue based on label
         uses: actions/github-script@v7
         with:
           script: |
