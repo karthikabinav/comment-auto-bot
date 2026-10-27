@@ -3,12 +3,18 @@ name: Automated Comment Bot
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to test or retry
+        required: true
+        type: number
 
 permissions:
   issues: write
 
 concurrency:
-  group: auto-comment-${{ github.repository }}-${{ github.event.issue.number }}
+  group: auto-comment-${{ github.repository }}-${{ github.event.issue.number || inputs.issue_number }}
   cancel-in-progress: false
 
 jobs:
@@ -21,7 +27,19 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const labels = (context.payload.issue.labels ?? []).map(label =>
+            const issueNumber = context.eventName === "issues"
+              ? context.issue.number
+              : Number(context.payload.inputs.issue_number);
+            if (!Number.isSafeInteger(issueNumber) || issueNumber < 1) {
+              throw new Error("A positive issue number is required.");
+            }
+            const issue = { ...context.repo, issue_number: issueNumber };
+            const issueData = context.payload.issue ??
+              (await github.rest.issues.get(issue)).data;
+            if (issueData.pull_request) {
+              return;
+            }
+            const labels = (issueData.labels ?? []).map(label =>
               typeof label === "string" ? label : label.name
             );
             let body;
@@ -35,7 +53,6 @@ jobs:
               return;
             }
 
-            const issue = { ...context.repo, issue_number: context.issue.number };
             const comments = await github.paginate(github.rest.issues.listComments, {
               ...issue, per_page: 100
             });
