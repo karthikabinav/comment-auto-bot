@@ -3,43 +3,124 @@ name: Automated Comment Bot
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
+    inputs:
+      bug_issue_number:
+        description: 'Optional existing Bug report test issue to reuse'
+        required: false
+        type: string
+      feature_issue_number:
+        description: 'Optional existing Feature request test issue to reuse'
+        required: false
+        type: string
+      documentation_issue_number:
+        description: 'Optional existing Documentation update test issue to reuse'
+        required: false
+        type: string
+
+permissions:
+  issues: write
 
 jobs:
   comment:
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
+    timeout-minutes: 5
     steps:
-      - name: Comment on Bug Issues
-        if: contains(toJSON(github.event.issue.labels.*.name), 'bug')
-        uses: actions/github-script@v7
+      - name: Reply to new issues or run three smoke tests
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea9 # v7
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Thank you. We will fix it'
-            })
-      - name: Comment on Feature Issues
-        if: contains(toJSON(github.event.issue.labels.*.name), 'feature')
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Thank you, we will consider to include this feature.'
-            })
-      - name: Comment on Other Issues
-        if: ${{ !contains(toJSON(github.event.issue.labels.*.name), 'bug') && !contains(toJSON(github.event.issue.labels.*.name), 'feature') }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Thank you for your contribution!'
-            })
+            const repo = context.repo;
+            const messages = {
+              bug: 'Thank you. We will fix it',
+              feature: 'Thank you, we will consider to include this feature.',
+              other: 'Thank you for your contribution!'
+            };
+            const labelNames = issue => issue.labels.map(label =>
+              typeof label === 'string' ? label : label.name);
+            const responseFor = issue => {
+              const labels = labelNames(issue);
+              if (labels.includes('bug')) return messages.bug;
+              if (labels.includes('feature')) return messages.feature;
+              return messages.other;
+            };
+            async function respond(issue, repairTestComments = false) {
+              const body = responseFor(issue);
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...repo, issue_number: issue.number, per_page: 100
+              });
+              const greetings = comments.filter(comment =>
+                comment.user.login === 'github-actions[bot]' &&
+                Object.values(messages).includes(comment.body));
+              const existing = greetings.find(comment => comment.body === body);
+              // Only smoke-test fixtures are repaired; human comments are never changed.
+              if (repairTestComments) {
+                for (const comment of greetings) {
+                  if (!existing || comment.id !== existing.id) {
+                    await github.rest.issues.deleteComment({
+                      ...repo, comment_id: comment.id
+                    });
+                  }
+                }
+              }
+              if (!existing) {
+                await github.rest.issues.createComment({
+                  ...repo, issue_number: issue.number, body
+                });
+              }
+              return body;
+            }
+            if (context.eventName === 'issues') {
+              await respond(context.payload.issue);
+              return;
+            }
+            const fixtures = [
+              {title: 'Bug report', labels: ['bug'], key: 'bug_issue_number',
+               body: 'Pretend bug report to test the automated issue comment bot.',
+               expected: messages.bug},
+              {title: 'Feature request', labels: ['feature'], key: 'feature_issue_number',
+               body: 'Pretend feature request to test the automated issue comment bot.',
+               expected: messages.feature},
+              {title: 'Documentation update', labels: [], key: 'documentation_issue_number',
+               body: 'Pretend documentation issue to test the unlabeled issue response.',
+               expected: messages.other}
+            ];
+            const results = [];
+            for (const fixture of fixtures) {
+              const supplied = (context.payload.inputs?.[fixture.key] || '').trim();
+              let issue;
+              if (supplied) {
+                if (!/^[1-9][0-9]*$/.test(supplied) ||
+                    !Number.isSafeInteger(Number(supplied))) {
+                  throw new Error('Invalid test issue number');
+                }
+                issue = (await github.rest.issues.get({
+                  ...repo, issue_number: Number(supplied)
+                })).data;
+              } else {
+                issue = (await github.rest.issues.create({
+                  ...repo, title: fixture.title, body: fixture.body, labels: fixture.labels
+                })).data;
+              }
+              if (issue.pull_request || issue.state !== 'open' ||
+                  issue.title !== fixture.title ||
+                  JSON.stringify(labelNames(issue).sort()) !==
+                  JSON.stringify([...fixture.labels].sort())) {
+                throw new Error('Test issue title or labels do not match the requested fixture');
+              }
+              // Issues created with GITHUB_TOKEN do not emit new workflow runs,
+              // so exercise the same response function explicitly for these tests.
+              await respond(issue, true);
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...repo, issue_number: issue.number, per_page: 100
+              });
+              if (!comments.some(comment =>
+                  comment.user.login === 'github-actions[bot]' &&
+                  comment.body === fixture.expected)) {
+                throw new Error('Expected automated comment was not found');
+              }
+              results.push({number: issue.number, title: issue.title,
+                labels: labelNames(issue), comment: fixture.expected, url: issue.html_url});
+              core.info('Verified smoke test: ' + JSON.stringify(results.at(-1)));
+            }
+            core.setOutput('test_issues', JSON.stringify(results));
