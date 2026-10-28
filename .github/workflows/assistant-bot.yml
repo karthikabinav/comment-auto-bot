@@ -110,7 +110,7 @@ jobs:
               }
               // Issues created with GITHUB_TOKEN do not emit new workflow runs,
               // so exercise the same response function explicitly for these tests.
-              await respond(issue, true);
+              await respond(issue);
               const comments = await github.paginate(github.rest.issues.listComments, {
                 ...repo, issue_number: issue.number, per_page: 100
               });
