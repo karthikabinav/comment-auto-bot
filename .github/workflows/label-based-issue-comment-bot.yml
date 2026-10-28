@@ -1,0 +1,62 @@
+name: Label-Based Issue Comment Bot
+
+# Watches for newly opened issues and replies based on the issue's labels:
+#   bug      -> "Thank you. We will fix it"
+#   feature  -> "Thank you, we will consider to include this feature."
+#   no label -> "Thank you for your contribution!"
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  comment:
+    name: Comment on new issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Post label-based comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+            // Retry when GitHub rate limits the request or has a transient error.
+            async function withRetry(fn, attempts = 6) {
+              for (let attempt = 1; ; attempt++) {
+                try {
+                  return await fn();
+                } catch (error) {
+                  const status = error.status || 0;
+                  const retryable = status === 429 || status >= 500 ||
+                    (status === 403 && /rate limit/i.test(String(error.message)));
+                  if (!retryable || attempt >= attempts) throw error;
+                  const waitSeconds = Math.min(30 * attempt, 120);
+                  core.warning(`Request failed (HTTP ${status}); retrying in ${waitSeconds}s (attempt ${attempt}/${attempts}).`);
+                  await sleep(waitSeconds * 1000);
+                }
+              }
+            }
+
+            const labels = (context.payload.issue.labels || []).map((label) =>
+              (typeof label === 'string' ? label : label.name).toLowerCase());
+
+            let body;
+            if (labels.includes('bug')) {
+              body = 'Thank you. We will fix it';
+            } else if (labels.includes('feature')) {
+              body = 'Thank you, we will consider to include this feature.';
+            } else if (labels.length === 0) {
+              body = 'Thank you for your contribution!';
+            } else {
+              core.info(`Issue #${issue_number} has labels (${labels.join(', ')}) that do not need an automated reply.`);
+              return;
+            }
+
+            await withRetry(() =>
+              github.rest.issues.createComment({ owner, repo, issue_number, body }));
+            core.info(`Commented on issue #${issue_number}: ${body}`);
