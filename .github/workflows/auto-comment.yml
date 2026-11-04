@@ -2,7 +2,7 @@ name: Automated Comment Bot
 
 on:
   issues:
-    types: [opened, edited, labeled]
+    types: [opened]
 
 permissions:
   issues: write
