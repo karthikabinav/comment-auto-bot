@@ -3,6 +3,9 @@ name: Automated Comment Bot
 on:
   issues:
     types: [opened]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   issues: write
@@ -11,36 +14,50 @@ jobs:
   auto-comment:
     runs-on: ubuntu-latest
     steps:
-      - name: Comment on bug issues
-        if: contains(github.event.issue.labels.*.name, 'bug')
+      - name: Comment on issue
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Thank you. We will fix it'
-            })
-      - name: Comment on feature issues
-        if: contains(github.event.issue.labels.*.name, 'feature')
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Thank you, we will consider to include this feature.'
-            })
-      - name: Comment on unlabeled issues
-        if: github.event.issue.labels.length == 0
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Thank you for your contribution!'
-            })
+            const repo = context.repo;
+            function getCommentBody(labels) {
+              const labelNames = (labels || []).map(l => typeof l === "string" ? l : l.name);
+              if (labelNames.includes("bug")) {
+                return "Thank you. We will fix it";
+              } else if (labelNames.includes("feature")) {
+                return "Thank you, we will consider to include this feature.";
+              } else {
+                return "Thank you for your contribution!";
+              }
+            }
+            if (context.eventName === "issues") {
+              const issue = context.payload.issue;
+              const body = getCommentBody(issue.labels);
+              await github.rest.issues.createComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                issue_number: issue.number,
+                body: body
+              });
+            } else {
+              const testIssues = [
+                { title: "Bug report", body: "Bug report test issue", labels: ["bug"] },
+                { title: "Feature request", body: "Feature request test issue", labels: ["feature"] },
+                { title: "Documentation update", body: "Documentation update test issue", labels: [] }
+              ];
+              for (const item of testIssues) {
+                const created = await github.rest.issues.create({
+                  owner: repo.owner,
+                  repo: repo.repo,
+                  title: item.title,
+                  body: item.body,
+                  labels: item.labels
+                });
+                const commentBody = getCommentBody(created.data.labels);
+                await github.rest.issues.createComment({
+                  owner: repo.owner,
+                  repo: repo.repo,
+                  issue_number: created.data.number,
+                  body: commentBody
+                });
+              }
+            }
